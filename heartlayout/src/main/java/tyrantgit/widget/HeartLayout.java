@@ -17,13 +17,41 @@ package tyrantgit.widget;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Color;
 import android.util.AttributeSet;
+import android.view.MotionEvent;
+import android.view.View;
 import android.widget.RelativeLayout;
+import java.util.Timer;
+import java.util.TimerTask;
 
+public class HeartLayout extends RelativeLayout implements View.OnTouchListener {
 
-public class HeartLayout extends RelativeLayout {
-
+    //隐藏的时候
+    public static final int STATUS_HIDE = 0;
+    //准备更新
+    public static final int STATUS_PRE_REFRESH = 1;
+    //正在更新
+    public static final int STATUS_REFRESHING  =2;
+    //准备停止更新
+    public static final int STATUS_PRE_STOP = 3;
+    //停止更新
+    public static final int STATUS_FINISH = 4;
     private AbstractPathAnimator mAnimator;
+    private Timer mTimer = new Timer();
+    // 手指按下时,屏幕上的高度
+    private float mYDown = 0;
+    // 手指移动的最大高度
+    private int mTouchSlop = 0;
+    // 下拉头的布局参数
+    private MarginLayoutParams mHeaderLayoutParams;
+    // 心形view的高度
+    private HeartView mHeartView;
+    //隐藏heartview部分的高度
+    private int mHideHeaderHeight;
+    //当前的状态
+    private boolean mAbleToPull;
+    private int mCurrentStatus;
 
     public HeartLayout(Context context) {
         super(context);
@@ -41,12 +69,13 @@ public class HeartLayout extends RelativeLayout {
     }
 
     private void init(AttributeSet attrs, int defStyleAttr) {
-
+        mHeartView  =new HeartView(getContext());
+        mHideHeaderHeight = -2*mHeartView.getHeight();
+        mHeaderLayoutParams = (MarginLayoutParams) mHeartView.getLayoutParams();
+        mAbleToPull = true;
         final TypedArray a = getContext().obtainStyledAttributes(
                 attrs, R.styleable.HeartLayout, defStyleAttr, 0);
-
         mAnimator = new PathAnimator(AbstractPathAnimator.Config.fromTypeArray(a));
-
         a.recycle();
     }
 
@@ -78,4 +107,39 @@ public class HeartLayout extends RelativeLayout {
         mAnimator.start(heartView, this);
     }
 
+    public void startUpdate(){
+        mTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override public void run() {
+                addHeart(Color.RED);
+            }
+        },500,1000);
+    }
+
+    private void stopAnimation(){
+
+    }
+
+    public void finish(){
+        mTimer.cancel();
+    }
+
+    @Override public boolean onTouch(View v, MotionEvent event) {
+        switch (event.getAction()){
+            case MotionEvent.ACTION_DOWN:
+                mYDown = event.getRawY();
+                break;
+            case MotionEvent.ACTION_MOVE:
+                float yMove = event.getRawY();
+                int distance = (int) (yMove - mYDown);
+                if (distance<=0||distance<mTouchSlop){
+                    return false;
+                }
+
+                break;
+            case MotionEvent.ACTION_UP:
+
+                break;
+        }
+        return false;
+    }
 }
